@@ -91,3 +91,25 @@ nav a{font-weight:700;transition:color .2s}
 #live-indicator{white-space:nowrap}
 .footer{align-items:center}
 @media(max-width:760px){.top{padding:0 5%;}.hero h1{letter-spacing:-3px}.match-search{width:100%;min-width:0}.score-tools{gap:10px}.score-tools .tabs{overflow-x:auto;flex-wrap:nowrap}.tab{white-space:nowrap}.section{padding:54px 0}.featured-league-rail{margin-right:-5%;padding-right:5%}}
+
+/* Clarity and league discovery pass */
+body{background:#080d0b}
+.top-leagues-section{position:relative;margin:0 auto;padding:22px 0 18px;background:#0d1510;border-bottom:1px solid #26372c}
+.top-leagues-section .heading{margin-bottom:12px}
+.top-leagues-section .heading h2{font-size:28px}
+.top-leagues-section .disclaimer{color:#c1d0c4}
+.featured-league-rail{display:flex;flex-wrap:wrap;overflow:visible;gap:9px;padding:5px 0 8px;scroll-snap-type:none}
+.featured-league-rail .league-chip{flex:0 0 auto;padding:11px 15px;background:#17231a;border:1px solid #435b45;color:#f1f6ef;font-size:13px;font-weight:700;border-radius:8px}
+.featured-league-rail .league-chip.active{background:#c6f77b;border-color:#c6f77b;color:#10170d}
+#league-rail{display:flex;flex-wrap:wrap;overflow:visible;scroll-snap-type:none;padding:8px 0 14px}
+#league-rail .league-chip{border-radius:8px;padding:9px 13px}
+.hero{min-height:400px;padding-top:38px;padding-bottom:38px}
+.hero h1{font-size:clamp(42px,5.5vw,68px);letter-spacing:-2.5px}
+.hero p{color:#c0ccc3}
+.section{padding-top:52px;padding-bottom:52px}
+.subheading h3{color:#f5f8f3}
+.match-card{background:#121d16;border-color:#3b5140;box-shadow:none}
+.match-card-top,.match-card-foot,.match-card-score small,.match-team strong{color:#d0ddd3}
+.match-card-top b{color:#d4e2d7}
+.disclaimer{color:#b2c0b6}
+@media(max-width:600px){.top-leagues-section{padding:18px 0 14px}.top-leagues-section .heading h2{font-size:24px}.featured-league-rail{gap:8px}.featured-league-rail .league-chip{font-size:12px;padding:10px 12px}.hero{min-height:auto;padding:35px 0}.section{padding-top:38px;padding-bottom:38px}}
