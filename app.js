@@ -25,3 +25,12 @@ document.querySelectorAll(".tab[data-filter]").forEach(b=>b.addEventListener("cl
 const refreshBtn=document.getElementById("refresh-scores");if(refreshBtn)refreshBtn.addEventListener("click",refresh);const matchSearch=document.getElementById("match-search");if(matchSearch)matchSearch.addEventListener("input",e=>{searchTerm=e.target.value.trim().toLowerCase();render()});
 // League chips are rendered from the actual competitions returned by the feed.
 refresh();setInterval(refresh,60000);
+
+
+/* Shared directory interactions: searchable cards and persistent club follows. */
+function readFollows(){try{return JSON.parse(localStorage.getItem("soccertip:follows")||"[]")}catch(_){return []}}
+function saveFollows(items){try{localStorage.setItem("soccertip:follows",JSON.stringify(items))}catch(_){}}
+function paintFollows(){const saved=readFollows();document.querySelectorAll("[data-favorite]").forEach(btn=>{const card=btn.closest(".club-card"),name=card?.querySelector("h3")?.textContent?.trim();const on=saved.includes(name);btn.textContent=on?"★ Following":"☆ Follow";btn.classList.toggle("active",on);btn.setAttribute("aria-pressed",String(on))})}
+document.querySelectorAll("[data-favorite]").forEach(btn=>btn.addEventListener("click",()=>{const name=btn.closest(".club-card")?.querySelector("h3")?.textContent?.trim();if(!name)return;const saved=readFollows(),next=saved.includes(name)?saved.filter(x=>x!==name):[...saved,name];saveFollows(next);paintFollows()}));
+document.querySelectorAll("[data-search]").forEach(input=>input.addEventListener("input",()=>{const selector=input.dataset.search,term=input.value.trim().toLowerCase();document.querySelectorAll(selector).forEach(card=>{card.hidden=!card.textContent.toLowerCase().includes(term)})}));
+paintFollows();
