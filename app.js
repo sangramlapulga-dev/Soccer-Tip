@@ -1,8 +1,36 @@
 // Soccer-Tip global match centre — SportScore public API (no API key).
 // The API is date-based; its actual competition coverage is shown dynamically.
-const API="https://sportscore.com/api/v1/fixtures/";
-const WIDGET_API="https://sportscore.com/api/widget/matches/";
-const LEAGUE_NAMES={"eng.1":"Premier League","esp.1":"La Liga","ger.1":"Bundesliga","ita.1":"Serie A","fra.1":"Ligue 1","uefa.champions":"UEFA Champions League","uefa.europa":"UEFA Europa League","uefa.europa.conf":"UEFA Conference League","ned.1":"Eredivisie","por.1":"Primeira Liga","usa.1":"MLS","mex.1":"Liga MX","bra.1":"Brasileirão","arg.1":"Argentina Primera","sco.1":"Scottish Premiership","eng.2":"EFL Championship","eng.w.1":"Women's Super League","uefa.wchampions":"Women's Champions League","fifa.world":"FIFA World Cup"};
+// ESPN public soccer scoreboard feed. Public site endpoint; no API key used.
+const ESPN="https://site.api.espn.com/apis/site/v2/sports/soccer/";
+const LEAGUES=[
+ {id:"eng.1",name:"Premier League"},{id:"esp.1",name:"La Liga"},
+ {id:"ita.1",name:"Serie A"},{id:"ger.1",name:"Bundesliga"},
+ {id:"fra.1",name:"Ligue 1"},{id:"uefa.champions",name:"Champions League"},
+ {id:"uefa.europa",name:"Europa League"},{id:"ned.1",name:"Eredivisie"},
+ {id:"por.1",name:"Primeira Liga"},{id:"usa.1",name:"MLS"}
+];
+const LEAGUE_NAMES=Object.fromEntries(LEAGUES.map(x=>[x.id,x.name]));
+function parseESPNEvent(event,league){
+ const comp=event.competitions?.[0]||{};
+ const competitors=comp.competitors||[];
+ const h=competitors.find(x=>x.homeAway==="home")||competitors[0]||{};
+ const a=competitors.find(x=>x.homeAway==="away")||competitors[1]||{};
+ const phase=String(event.status?.type?.state||"pre").toLowerCase();
+ const kind=phase==="in"?"live":phase==="post"?"completed":"upcoming";
+ const status=event.status?.type?.detail||event.status?.type?.shortDetail||event.status?.type?.name||"";
+ return {raw:event,id:event.id,slug:event.id,competition:league.id,competitionName:league.name,
+  home:{name:h.team?.displayName||h.team?.name||"TBC",logo:h.team?.logo||""},
+  away:{name:a.team?.displayName||a.team?.name||"TBC",logo:a.team?.logo||""},
+  homeScore:h.score??"",awayScore:a.score??"",kind,status:phase,statusText:status,time:event.date||""};
+}
+async function getLeagueScoreboard(league){
+ const url=ESPN+encodeURIComponent(league.id)+"/scoreboard?limit=100";
+ const response=await fetch(url,{cache:"no-store"});
+ if(!response.ok)throw Error(league.name+" HTTP "+response.status);
+ const json=await response.json();
+ if(!Array.isArray(json.events))throw Error(league.name+" returned no events array");
+ return json.events.map(e=>parseESPNEvent(e,league));
+}
 const railIds=["live-matches","today-matches","upcoming-matches","finished-matches"];
 const rails=Object.fromEntries(railIds.map(id=>[id,document.getElementById(id)]));
 const statusEl=document.getElementById("score-status"),indicator=document.getElementById("live-indicator"),leagueRail=document.getElementById("league-rail"),detailEl=document.getElementById("match-detail");
@@ -20,22 +48,19 @@ function render(){const live=allMatches.filter(m=>m.kind==="live"),upcoming=allM
 function renderLeagues(){if(!leagueRail)return;const names=[...new Set(allMatches.map(leagueName))].sort((a,b)=>a.localeCompare(b));leagueRail.innerHTML='<button class="league-chip '+(activeLeague==="all"?"active":"")+'" data-league="all">All leagues ('+allMatches.length+')</button>'+names.map(n=>'<button class="league-chip '+(activeLeague===n?"active":"")+'" data-league="'+esc(n)+'">'+esc(n)+'</button>').join("");document.querySelectorAll("#featured-leagues [data-league]").forEach(b=>b.classList.toggle("active",b.dataset.league===activeLeague))}
 function extractMatches(d){const arr=Array.isArray(d)?d:(d?.fixtures||d?.matches||d?.results||d?.data);if(!Array.isArray(arr))throw Error("Unexpected SportScore response format");return arr.map(normalize)}
 async function fetchJson(url){const r=await fetch(url,{cache:"no-store"});if(!r.ok)throw Error("HTTP "+r.status);return r.json()}
-async function getFixtures(date,status){const u=new URL(API);u.searchParams.set("sport","football");u.searchParams.set("date",date);u.searchParams.set("status",status);u.searchParams.set("limit","200");return extractMatches(await fetchJson(u.toString()))}
-async function getWidgetMatches(){const u=new URL(WIDGET_API);u.searchParams.set("sport","football");u.searchParams.set("limit","50");return extractMatches(await fetchJson(u.toString()))}
-async function refresh(){if(busy)return;busy=true;if(statusEl)statusEl.textContent="Checking SportScore live matches and daily fixtures…";if(indicator)indicator.textContent="● UPDATING";try{
- const utcDate=new Date().toISOString().slice(0,10);
- const statuses=["live","upcoming","finished"];
- const results=await Promise.allSettled(statuses.map(st=>getFixtures(utcDate,st)));
- let collected=results.filter(x=>x.status==="fulfilled").flatMap(x=>x.value);
- const failures=results.filter(x=>x.status==="rejected").map(x=>x.reason?.message||"Feed unavailable");
- // The live/recent widget is a separate fallback. One failed status query must never erase successful results.
- if(!collected.length){try{collected=await getWidgetMatches()}catch(e){failures.push("widget: "+e.message)}}
- const seen=new Map();collected.forEach(m=>seen.set(String(m.id||m.slug||[m.home.name,m.away.name,m.time].join("|")),m));
- allMatches=[...seen.values()];renderLeagues();render();
- const live=allMatches.filter(m=>m.kind==="live").length;
- if(indicator)indicator.textContent=live?"● "+live+" LIVE":allMatches.length?"● FEED CONNECTED":"● NO MATCH DATA";
- if(statusEl)statusEl.textContent=allMatches.length?"SportScore · "+allMatches.length+" matches loaded · "+live+" live · Updated "+new Date().toLocaleTimeString("en-IN",{timeZone:"Asia/Kolkata"})+" IST · Auto-refresh 60 sec.":"SportScore returned no match records. "+(failures.length?failures.join(" · "):"No matches are currently available from this feed.")+" No sample scores are displayed.";
- }catch(e){allMatches=[];renderLeagues();render();if(indicator)indicator.textContent="● FEED ERROR";if(statusEl)statusEl.textContent="Could not load football data: "+e.message+". No sample scores are displayed."}finally{busy=false}}
+async function refresh(){if(busy)return;busy=true;if(statusEl)statusEl.textContent="Connecting to live scoreboards for the major leagues…";if(indicator)indicator.textContent="● UPDATING";
+ try{
+  const results=await Promise.allSettled(LEAGUES.map(getLeagueScoreboard));
+  const good=results.filter(x=>x.status==="fulfilled");
+  const errors=results.filter(x=>x.status==="rejected").map(x=>x.reason?.message||"feed unavailable");
+  const all=good.flatMap(x=>x.value);
+  const seen=new Map();all.forEach(m=>seen.set(String(m.id),m));allMatches=[...seen.values()];
+  renderLeagues();render();
+  const live=allMatches.filter(m=>m.kind==="live").length;
+  if(indicator)indicator.textContent=live?"● "+live+" LIVE":good.length?"● "+good.length+"/"+LEAGUES.length+" LEAGUES":"● FEED ERROR";
+  if(statusEl)statusEl.textContent=allMatches.length?"ESPN public scoreboards · "+allMatches.length+" matches · "+live+" live · "+good.length+"/"+LEAGUES.length+" leagues connected · Updated "+new Date().toLocaleTimeString("en-IN",{timeZone:"Asia/Kolkata"})+" IST. "+(errors.length?"Unavailable: "+errors.join(", "):"Auto-refresh every 60 sec."):"No match events returned. "+(errors.join(" · ")||"Try refresh later.")+" No sample scores are displayed.";
+ }catch(e){if(indicator)indicator.textContent="● FEED ERROR";if(statusEl)statusEl.textContent="Live score feed error: "+e.message+". No sample scores are displayed."}
+ finally{busy=false}}
 function showDetail(key){const m=allMatches.find(x=>String(x.id||x.slug||"")===key);if(!m||!detailEl)return;const dt=m.time?new Date(m.time):null;detailEl.hidden=false;detailEl.innerHTML='<div class="detail-head"><div><span class="eyebrow">MATCH DETAILS</span><h3>'+esc(leagueName(m))+'</h3></div><button type="button" id="close-detail" class="tab">Close ✕</button></div><div class="detail-score">'+teamHtml(m.home)+'<div><strong>'+(m.kind==="upcoming"?"VS":esc(m.homeScore)+" : "+esc(m.awayScore))+'</strong><small>'+esc(m.statusText||m.kind.toUpperCase())+'</small></div>'+teamHtml(m.away)+'</div><p class="disclaimer">'+(dt&&!isNaN(dt)?dt.toLocaleString("en-IN",{timeZone:"Asia/Kolkata"}):"")+'</p><p class="disclaimer">Live video is shown only when an authorised broadcaster provides a stream. Soccer-Tip does not host or redistribute broadcasts.</p><a class="cta" href="https://sportscore.com/" target="_blank" rel="noopener">OPEN SPORTScore MATCH CENTRE ↗</a>' ;detailEl.scrollIntoView({behavior:"smooth",block:"start"});document.getElementById("close-detail").addEventListener("click",()=>{detailEl.hidden=true})}
 document.addEventListener("click",e=>{const chip=e.target.closest("[data-league]");if(chip){activeLeague=chip.dataset.league;document.querySelectorAll("[data-league]").forEach(b=>b.classList.toggle("active",b.dataset.league===activeLeague));renderLeagues();render();document.getElementById("scores")?.scrollIntoView({behavior:"smooth",block:"start"})}const match=e.target.closest("[data-match]");if(match)showDetail(match.dataset.match);});
 document.querySelectorAll(".tab[data-filter]").forEach(b=>b.addEventListener("click",()=>{document.querySelectorAll(".tab[data-filter]").forEach(x=>x.classList.remove("active"));b.classList.add("active");activeFilter=b.dataset.filter;render()}));
