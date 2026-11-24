@@ -65,3 +65,29 @@
 .featured-league-rail .league-chip.active{background:#b7e36a;color:#10170d;border-color:#b7e36a}
 .top-leagues-section .heading{align-items:end}
 @media(max-width:600px){.top-leagues-section{padding-top:18px}.featured-league-rail .league-chip{padding:11px 15px}}
+
+/* Premium match-centre refinement */
+:root{--green:#c6f77b;--panel:#101a14;--line:#293a2e}
+body{background:radial-gradient(ellipse at 50% -18%,#1a3323 0,transparent 42%),var(--bg)}
+.top{position:sticky;top:0;z-index:30;background:#080d0beF;backdrop-filter:blur(16px);width:100%;padding:0 max(6%,calc((100% - 1120px)/2));border-bottom:1px solid #ffffff18}
+.brand{font-size:21px;letter-spacing:-.5px}
+nav a{font-weight:700;transition:color .2s}
+.hero{min-height:500px}
+.hero h1{letter-spacing:-5px}
+.stadium{border-radius:18px;box-shadow:0 24px 80px #0007}
+.ticker{letter-spacing:2px}
+.top-leagues-section{padding-top:44px;padding-bottom:30px}
+.featured-league-rail{padding-bottom:12px}
+.league-chip{transition:background .2s,border-color .2s,transform .2s}
+.league-chip:hover{transform:translateY(-2px);border-color:var(--green)}
+.match-search{background:#101a14;border:1px solid var(--line);color:var(--txt);border-radius:4px;padding:10px 14px;min-width:220px;outline:none;font:500 12px var(--body)}
+.match-search:focus{border-color:var(--green);box-shadow:0 0 0 3px #c6f77b18}
+.match-card{background:linear-gradient(145deg,#16241a,#0b120e);border-radius:14px;box-shadow:0 8px 24px #0002}
+.match-card:focus-visible,.tab:focus-visible,.league-chip:focus-visible{outline:2px solid var(--green);outline-offset:3px}
+.match-card-top{gap:12px}
+.match-card-score{font-size:24px}
+.match-detail{border:1px solid var(--green);border-radius:16px;background:linear-gradient(145deg,#17271b,#0d1510);padding:22px;margin-top:24px}
+.section{scroll-margin-top:85px}
+#live-indicator{white-space:nowrap}
+.footer{align-items:center}
+@media(max-width:760px){.top{padding:0 5%;}.hero h1{letter-spacing:-3px}.match-search{width:100%;min-width:0}.score-tools{gap:10px}.score-tools .tabs{overflow-x:auto;flex-wrap:nowrap}.tab{white-space:nowrap}.section{padding:54px 0}.featured-league-rail{margin-right:-5%;padding-right:5%}}
