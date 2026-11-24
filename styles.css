@@ -58,3 +58,10 @@
 .detail-score>div:nth-child(2)>strong{font:700 26px 'Space Grotesk',sans-serif}
 .empty-state{padding:20px;color:#a8b9ad;border:1px dashed #344b37;border-radius:14px;min-width:250px}
 @media(max-width:600px){.score-tools{align-items:flex-start}.match-card{flex-basis:84vw}.subheading h3{font-size:18px}.detail-score{gap:6px}.match-team strong{font-size:11px}}
+
+.top-leagues-section{padding-top:26px;padding-bottom:12px}
+.featured-league-rail{padding-top:12px;padding-bottom:18px}
+.featured-league-rail .league-chip{padding:13px 19px;font-size:14px;background:#142019;border-color:#344b37}
+.featured-league-rail .league-chip.active{background:#b7e36a;color:#10170d;border-color:#b7e36a}
+.top-leagues-section .heading{align-items:end}
+@media(max-width:600px){.top-leagues-section{padding-top:18px}.featured-league-rail .league-chip{padding:11px 15px}}
